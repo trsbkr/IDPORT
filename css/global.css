@@ -1,0 +1,7 @@
+/* Global styles for IDPORT */
+:root {
+  --color-bg: #ffffff;
+  --color-fg: #111111;
+}
+
+html,body,#app { height:100%; margin:0; }
