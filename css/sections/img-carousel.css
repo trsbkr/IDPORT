@@ -1,1 +1,627 @@
 /* Image carousel styles */
+.img-carousel-gallery {
+
+    position: relative;
+
+    width: 100%;
+
+    height: 35vh;
+
+    overflow: hidden;
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    isolation: isolate;
+
+    background:
+    linear-gradient(
+        180deg,
+        #050505,
+        #0b0b0b
+    );
+}
+
+/* ==========================
+   NEON BACKGROUND
+========================== */
+
+.neon-layer {
+
+    position: absolute;
+
+    inset: 0;
+
+    z-index: -1;
+
+    overflow: hidden;
+}
+
+.neon-layer::before,
+
+.neon-layer::after {
+
+    content: "";
+
+    position: absolute;
+
+    width: 45vw;
+
+    height: 45vw;
+
+    border-radius: 50%;
+
+    filter: blur(160px);
+
+    opacity: .70;
+}
+
+.neon-layer::before {
+
+    background: #00ffff;
+
+    top: -20%;
+
+    left: -10%;
+
+    animation:
+neonMoveOne
+8s ease-in-out infinite alternate;
+}
+
+.neon-layer::after {
+
+    background: #8b5cf6;
+
+    bottom: -20%;
+
+    right: -10%;
+
+    animation:
+neonMoveTwo
+10s ease-in-out infinite alternate;
+}
+
+@keyframes neonMoveOne {
+
+    from {
+
+        transform:
+        translateX(0)
+        translateY(0);
+    }
+
+    to {
+
+        transform:
+        translateX(30%)
+        translateY(15%);
+    }
+}
+
+@keyframes neonMoveTwo {
+
+    from {
+
+        transform:
+        translateX(0)
+        translateY(0);
+    }
+
+    to {
+
+        transform:
+        translateX(-25%)
+        translateY(-15%);
+    }
+}
+
+/* ==========================
+   CAPACITY INDICATOR
+========================== */
+
+.capacity-indicator {
+
+    opacity: 0;
+
+transition:
+    opacity 0.5s ease;
+
+    position: absolute;
+
+    top: 1rem;
+
+    left: 1rem;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: .5rem;
+
+    padding: .45rem .8rem;
+
+    border-radius: 999px;
+
+    background:
+    rgba(255,255,255,.08);
+
+    backdrop-filter:
+    blur(8px);
+
+    z-index: 30;
+
+}
+
+.capacity-indicator.show {
+
+    opacity: 1;
+
+}
+
+.frame-icon {
+
+    width: 18px;
+
+    height: 18px;
+
+    border: 2px solid white;
+
+    border-radius: 3px;
+}
+
+.remaining-count {
+
+    color: white;
+
+    font-size: .85rem;
+
+    font-weight: 600;
+}
+
+/* ==========================
+   VIEWPORT
+========================== */
+
+.carousel-viewport {
+
+    width: 100%;
+
+    height: 100%;
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    perspective: 1800px;
+}
+
+/* ==========================
+   CYLINDER
+========================== */
+
+.carousel-cylinder {
+
+    position: relative;
+
+    width: 100%;
+
+    height: 100%;
+
+    transform-style:
+    preserve-3d;
+}
+
+/* ==========================
+   CYLINDER CARDS
+========================== */
+
+.carousel-card {
+
+    position: absolute;
+
+    left: 50%;
+
+    top: 50%;
+
+    width: clamp(
+        120px,
+        12vw,
+        190px
+    );
+
+    aspect-ratio: 9 / 16;
+
+    border-radius: 18px;
+
+    overflow: hidden;
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    background:
+    rgba(255,255,255,.06);
+
+    backdrop-filter:
+    blur(12px);
+
+    border:
+    1px solid
+    rgba(255,255,255,.1);
+
+    transform-style:
+    preserve-3d;
+
+    transition:
+    transform .8s ease,
+    opacity .8s ease,
+    scale .8s ease;
+
+    box-shadow:
+    0 0 25px
+    rgba(0,255,255,.08);
+
+    z-index: 1;
+}
+
+/* ==========================
+   PLACEHOLDER CONTENT
+========================== */
+
+.placeholder-content {
+
+    display: flex;
+
+    flex-direction: column;
+
+    justify-content: center;
+
+    align-items: center;
+
+    text-align: center;
+
+    gap: .4rem;
+
+    padding: 1rem;
+
+    color: white;
+
+    font-size: .9rem;
+
+    font-weight: 600;
+}
+
+.placeholder-content small {
+
+    opacity: .65;
+
+    font-size: .75rem;
+}
+
+/* ==========================
+   VIEWER PANEL
+========================== */
+
+.image-focus-view {
+
+    position: fixed;
+
+    inset: 0;
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    pointer-events: none;
+
+    z-index: 5000;
+
+}
+
+
+/* .image-focus-view {
+
+    position: absolute;
+
+    inset: 0;
+
+    display: none;
+
+    justify-content: center;
+
+    align-items: center;
+
+    z-index: 50;
+} */
+
+.task-preview-card {
+
+    width: 420px;
+
+    height: 60vh;
+
+    background: white;
+
+    border-radius: 20px;
+
+    overflow: hidden;
+
+    opacity: 0;
+
+    visibility: hidden;
+
+}
+
+@media (
+    max-width: 767px
+) {
+
+    .task-preview-card {
+
+        width: 86vw;
+
+        height: 75vh;
+
+    }
+
+}
+
+@media (min-width: 768px) {
+
+    .task-preview-card {
+
+        width: 700px;
+
+        height: 70vh;
+
+    }
+
+}
+
+@media (min-width: 1200px) {
+
+    .task-preview-card {
+
+        width: 75vw;
+
+        height: 90vh;
+
+    }
+
+}
+
+.task-preview-image {
+
+    height: 70%;
+
+    background-size: cover;
+
+    background-position: center;
+
+}
+
+.task-preview-content {
+
+    height: 20%;
+
+    padding: 18px;
+
+}
+
+.task-preview-actions {
+
+    height: 10%;
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    padding: 0 18px;
+
+}
+
+
+.viewer-button {
+
+    position: absolute;
+
+    bottom: 1rem;
+
+    right: 1rem;
+
+    border: none;
+
+    border-radius: 10px;
+
+    padding:
+    .8rem
+    1rem;
+
+    background:
+    rgba(255,255,255,.1);
+
+    color: white;
+
+    cursor: pointer;
+}
+
+/* ===================================
+   PHASE 4D UPDATE START
+   RESPONSIVE DESKTOP POLISH
+=================================== */
+
+@media (min-width: 768px) {
+
+    .img-carousel-gallery {
+
+        height: 42vh;
+    }
+
+    .carousel-card {
+
+        width: 240px;
+    }
+
+}
+
+@media (min-width: 1200px) {
+
+    .img-carousel-gallery {
+
+        height: 55vh;
+    }
+    
+    .carousel-card {
+
+        width: 220px;
+    }
+
+}
+
+/* ===================================
+   PHASE 4D UPDATE END
+=================================== */
+
+/* ==========================
+   DESKTOP NAVIGATION
+========================== */
+
+.carousel-nav {
+
+    position: absolute;
+
+    top: 50%;
+
+    transform: translateY(-50%);
+
+    width: 58px;
+
+    height: 58px;
+
+    border: none;
+
+    border-radius: 50%;
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    font-size: 1.4rem;
+
+    cursor: pointer;
+
+    color: #00ffff;
+
+    opacity: 0;
+
+    pointer-events: none;
+
+    transition:
+    opacity .35s ease,
+    transform .35s ease,
+    background .35s ease;
+
+    backdrop-filter: blur(14px);
+
+    background:
+    rgba(0,255,255,.15);
+
+    border:
+    1px solid
+    rgba(255,255,255,.15);
+
+    box-shadow:
+    0 0 24px
+    rgba(0,255,255,.45);
+
+    z-index: 40;
+}
+
+.carousel-nav.visible {
+
+    opacity: 1;
+
+    pointer-events: auto;
+}
+
+.carousel-nav:hover {
+
+    transform:
+    translateY(-50%)
+    scale(1.08);
+
+    box-shadow:
+    0 0 35px
+    rgba(0,255,255,.85);
+}
+
+.carousel-nav.prev {
+
+    left: 5%;
+}
+
+.carousel-nav.next {
+
+    right: 5%;
+}
+
+@media (max-width: 1199px) {
+
+    .carousel-nav {
+
+        display: none;
+    }
+
+}
+
+/* ==========================
+   EDGE FEEDBACK
+========================== */
+
+.edge-feedback {
+
+    animation:
+    edgePulse
+    .7s ease;
+}
+
+@keyframes edgePulse {
+
+    0% {
+
+        filter:
+        brightness(1);
+    }
+
+    25% {
+
+        filter:
+        brightness(1.35);
+    }
+
+    50% {
+
+        filter:
+        brightness(1.55);
+    }
+
+    100% {
+
+        filter:
+        brightness(1);
+    }
+}
