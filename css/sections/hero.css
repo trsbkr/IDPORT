@@ -1,1 +1,1492 @@
-/* Hero section styles */
+/* Hero Section Styles */
+
+.hero {
+
+    position: relative;
+
+    width: 100%;
+
+    height: 55vh;
+
+    overflow: hidden;
+
+    background:
+    #1a1a1a;
+
+}
+
+
+.hero-name {
+
+    position: absolute;
+
+    top: 35%;
+
+    left: 45%;
+
+    transform:
+    translate(
+        -50%,
+        -50%
+    );
+
+    font-size: 12vw;
+
+    font-weight: 600;
+
+    color: white;
+
+    z-index: 1;
+
+        width: 85%;
+
+    text-align: center;
+
+    white-space: nowrap;
+
+}
+
+.hero-quote {
+
+    position: absolute;
+
+    top: 48%;
+
+    left: 50%;
+
+    transform:
+    translateX(-50%);
+
+    width: 70%;
+
+    text-align: center;
+
+    color:
+    rgba(
+        255,
+        255,
+        255,
+        0.8
+    );
+
+    font-size: 1rem;
+
+    font-style: italic;
+
+    line-height: 1.6;
+
+    z-index: 3;
+
+}
+
+
+ .hero-portrait {
+
+    position: absolute;
+
+    left: 37%;
+
+    bottom: 0;
+
+    transform:
+    translateX(-50%);
+
+    height: 45vh;
+
+    aspect-ratio: 3 / 4;
+
+    width: auto;
+
+    background:
+        transparent;
+    /* #ff0000; */
+
+    z-index: 2;
+
+} 
+
+.hero-portrait-image {
+
+    width: 100%;
+
+    height: 100%;
+
+    object-fit: contain;
+
+    display: block;
+
+}
+
+
+/* MOBILE NORMAL BROWSER */
+
+@media (max-width: 767px) {
+
+    .hero-quote {
+
+    width: 85%;
+
+    font-size: 0.85rem;
+
+    top: 44%;
+
+}
+
+    .hero {
+
+        height: 30vh;
+
+    }
+
+    .hero-portrait {
+
+        width: 130px;
+
+        height: 24vh;
+
+        left: 32%;
+
+    }
+
+    .hero-name {
+
+        font-size: 15vw;
+
+    }
+
+}
+
+
+/* MOBILE DESKTOP BROWSER */
+
+@media (min-width: 768px)
+and
+(max-width: 1199px) {
+
+    .hero-quote {
+
+    width: 80%;
+
+    font-size: 0.95rem;
+
+}
+
+    .hero {
+
+        height: 33vh;
+
+    }
+
+    .hero-portrait {
+
+        width: 140px;
+
+        height: 26vh;
+
+        left: 35%;
+
+    }
+
+}
+
+
+/* DESKTOP LAPTOP BROWSER */
+
+@media (min-width: 1200px) {
+
+    .hero-quote {
+
+    width: 60%;
+
+    font-size: 1.15rem;
+
+}
+
+    .hero {
+
+        height: 72vh;
+
+    }
+
+    .hero-portrait {
+
+        width: 250px;
+
+        height: 60vh;
+
+        left: 30%;
+
+    }
+
+}
+
+
+
+
+/* =========================
+   HERO NAVIGATION
+========================= */
+
+.hero-nav {
+
+    position: absolute;
+
+    top: 20px;
+
+    right: 22px;
+
+    display: flex;
+
+    gap: 10px;
+
+    z-index: 100;
+
+}
+
+.nav-btn {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 8px;
+
+    padding: 14px 26px;
+
+    border-radius: 999px;
+
+    border: none;
+
+    text-decoration: none;
+
+    cursor: pointer;
+
+    background:  linear-gradient(
+                 145deg,
+                 #2d2d2d,
+                 #121212   ); 
+
+
+    color: white;
+
+    font-weight: 800;
+
+    font-size: 0.9rem;
+
+    box-shadow:
+        6px 6px 14px rgba(0,0,0,.45),
+       /* inset 1px 1px 10px */
+        rgba(255,255,255,.06);
+
+    transition: all .3s ease;
+
+}
+
+.nav-btn:hover {
+
+    transform: translateY(-2px);
+
+}
+
+
+/* =====================
+   MENU DROPDOWN BUTTONS 
+========================*/
+
+.dropdown-menu {
+
+    position: absolute;
+
+/* TO RESIZE THE 
+DROPDOWN BUTTON */
+
+    top: 53px;
+
+    right: 0.2px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 12px;
+
+    opacity: 0;
+
+    visibility: hidden;
+
+    transform: translateY(-15px);
+
+    transition: all .35s ease;
+
+    z-index: 99;
+
+}
+
+.dropdown-menu.active {
+
+    opacity: 1;
+
+    visibility: visible;
+
+    transform: translateY(0);
+
+}
+
+.dropdown-btn {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 10px;
+
+    z-index: 100; 
+
+    padding: 14px 20px;
+
+    text-decoration: none;
+
+    border-radius: 999px;
+
+    background:  linear-gradient(
+                 145deg,
+                 #2d2d2d,
+                 #121212   ); 
+
+    color: white;
+
+    font-weight: 600;
+
+    font-size: 0.8rem;
+
+    box-shadow:
+        6px 6px 14px rgba(0,0,0,.45),
+        inset 1px 1px 1px
+        rgba(255,255,255,.06);
+
+    transition: all .25s ease;
+
+}
+
+.dropdown-btn:hover {
+
+    transform: translateX(-4px);
+
+}
+
+
+/* ======================
+   THE MAIN SWITCH WHERE 
+   THE KNOB RESIDES IN 
+   ====================== */
+
+.switch-btn {
+
+    display: flex;
+
+    position: relative;
+
+
+/* TO RESIZE THE
+SWITCH BUTTON*/
+
+    width: 87px;
+
+    height: 42px;
+
+    border-radius: 9999px;
+
+    background:
+    linear-gradient(
+        145deg,
+        #2d2d2d,
+        #121212
+    );
+
+      box-shadow:
+        12px 12px 18px rgba(0,0,0,.55),
+        inset 1px 1px 1px 
+        rgba(255,255,255,.06); 
+
+    cursor: pointer;
+
+    overflow: hidden;
+
+    transition:
+    transform .45s ease;
+
+} 
+
+.switch-btn:hover {
+
+    transform: translateY(-3.5px);
+
+}
+
+
+/* ======================
+   THE MAIN SWITCH LABEL 
+   WHERE KNOB RESIDES IN 
+   ====================== */
+
+.switch-label {
+
+    position: absolute;
+
+    inset: 0;
+
+    display: flex; 
+
+    align-items: center;
+
+    justify-content: flex-end;
+
+    color: white;
+
+    font-weight: 600;
+
+    letter-spacing: 1px;
+
+    font-size: 0.55rem;
+
+    padding-right: 9px
+     
+}
+
+
+    /* ── Track (outer shell) ── */
+    .switch__base-outer {
+      display: block;
+      position: absolute;
+      inset: 0;
+      border-radius: 9999px;
+      background: /*#23293a*/;
+      box-shadow:
+        12px 12px 28px #12161f,
+        -8px -8px 20px #2e3650;
+      transition: box-shadow 0.45s ease;
+    }
+
+
+    /* ── Inner track recess ── */
+    .switch__base-inner {
+      display: block;
+      position: absolute;
+      inset: 4.2px;
+      border-radius: 9999px;
+      background: #1a1f2e;
+      box-shadow:
+        inset 6px 6px 10px #0e111a,
+        inset -20px -20px 30px #252c3e;
+    }
+
+
+/* ======================
+   THE KNOB RESIDING 
+   WITHIN THE MAIN SWITCH 
+   ====================== */
+
+.switch-knob {
+
+    position: absolute;
+
+    left: 5px;
+
+    top: 5px;
+
+    width: 32px;
+
+    height: 32px;
+
+    border-radius: 50%;
+
+    background:
+    linear-gradient(
+        145deg,
+        #4d4d4d,
+        #141414
+    );
+
+    box-shadow:
+
+        4px 4px 10px
+        rgba(0,0,0,.55),
+
+        -2px -2px 6px
+        rgba(255,255,255,.05),
+
+        inset 1px 1px 2px
+        rgba(255,255,255,.10),
+
+        inset -1px -1px 2px
+        rgba(0,0,0,.45);
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    transition:
+    transform .35s ease;
+
+    z-index: 2;
+
+}
+
+
+/* ===============
+   THE DOT ON KNOB  
+   =============== */
+
+
+.switch-dot {
+
+    position: absolute;
+
+    top: 6px;
+
+    right: 6px;
+
+    width: 4px;
+
+    height: 4px;
+
+    border-radius: 50%;
+
+    background: red;
+
+}
+
+
+/* ========================
+   THE ACTIVE STATE OF BOTH 
+   THE DOT, LABEL & KNOB  
+   WITHIN THE MAIN SWITCH 
+   ======================== */
+
+.switch-label {
+
+    transition:
+    transform .35s ease;
+
+}
+
+.switch-btn.active .switch-label {
+
+    transform:
+    translateX(-37px);
+
+}
+
+
+
+/* ==========================
+   UNIVERSAL SWITCH ENGINE
+   (NEVER DISABLE)
+   ========================== */
+
+.switch-btn {
+
+    --knob-travel: 45px;
+
+}
+
+.switch-btn.active
+.switch-knob {
+
+    transform:
+    translateX(
+        var(--knob-travel)
+    );
+
+}
+
+
+
+/* =============================
+   COMMENTED OUT BLOCK CODE
+   FOR NEON LIGHT REPLACEMENT
+   CHECK BELOW TO RESWITCH
+   ============================ */
+/*
+
+.switch-btn.active .switch-knob {
+
+    transform:
+    translateX(
+         45px
+    );
+
+}
+*/
+
+
+/* =============================
+   COMMENTED OUT BLOCK CODE
+   FOR NEON LIGHT REPLACEMENT
+   CHECK BELOW TO RESWITCH
+   ============================ */
+/*
+.switch-btn.active .switch-dot {
+
+    background:
+    #00ff88;
+
+} 
+*/
+
+
+
+
+
+
+
+
+/* ============================
+   THIS SECTION OF BLOCK CODE IS
+   FOR SWITCH SELECTION MODE FROM
+   NORMAL SWITCH TO THE NEON LIGHT
+   SWITCH BY USERS................
+   ...............................
+   ENSURE TO CHECK THESE ELEMENT
+   ...............................
+   .switch-btn.active .switch-dot
+   .switch-btn.active .switch-knob
+
+   ................................
+   =============================== */
+
+
+
+/* ==========================
+   NORMAL MODE ENGINE
+   ========================== */
+
+body.normal-mode
+.switch-btn.active
+.switch-dot {
+
+    background:
+    #00ff88;
+
+}
+
+body.normal-mode
+.switch-btn.active {
+
+    box-shadow:
+
+        12px 12px 18px
+        rgba(0,0,0,.55),
+
+        inset 1px 1px 1px
+        rgba(255,255,255,.06);
+
+}
+
+body.normal-mode
+.switch-btn.active
+.switch-knob {
+
+    box-shadow:
+
+        4px 4px 10px
+        rgba(0,0,0,.55),
+
+        -2px -2px 6px
+        rgba(255,255,255,.05),
+
+        inset 1px 1px 2px
+        rgba(255,255,255,.10),
+
+        inset -1px -1px 2px
+        rgba(0,0,0,.45);
+
+}
+
+/* =================================
+   NEOH LIGHT SWITCH REPLACEMENT FOR 
+   THE COMMENTED OUT BLOCK CODE FOR
+   
+   .switch-btn.active .switch-dot
+   ================================ */
+
+
+body.neon-mode
+.switch-btn.active
+.switch-dot {
+
+    background:
+    #00ff88;
+
+    box-shadow:
+
+        0 0 4px #00ff88,
+
+        0 0 8px #00ff88,
+
+        0 0 14px
+        rgba(0,255,136,.60);
+
+}
+
+
+/* =================================
+   NEOH LIGHT SWITCH REPLACEMENT FOR 
+   THE COMMENTED OUT BLOCK CODE FOR
+   
+   .switch-btn.active .switch-knob
+   ================================ */
+
+
+body.neon-mode
+.switch-btn.active
+.switch-knob {
+
+    box-shadow:
+
+        0 0 6px rgba(0,255,136,.25),
+
+        0 0 14px rgba(0,255,136,.15),
+
+        4px 4px 10px rgba(0,0,0,.55),
+
+        -2px -2px 6px rgba(255,255,255,.05),
+
+        inset 1px 1px 2px rgba(255,255,255,.10),
+
+        inset -1px -1px 2px rgba(0,0,0,.45);
+
+}
+
+
+
+/* ==========================
+   NEON MODE ENGINE
+   ========================== */
+
+body.neon-mode
+.switch-btn.active {
+
+    box-shadow:
+
+        0 0 6px rgba(0,255,136,.20),
+
+        0 0 12px rgba(0,255,136,.12),
+
+        12px 12px 18px rgba(0,0,0,.55),
+
+        inset 1px 1px 1px
+        rgba(255,255,255,.06);
+
+}
+
+
+
+
+
+
+
+
+
+/* ==================================
+   THIS OVERRIDE BLOCK CODE IS FOR 
+   MOBILE NORMAL BROWSER (MNB)
+   ================================== */
+
+@media (max-width: 767px) {
+
+    /* ===========================
+       HERO NAV CONTAINER OVERRIDE
+       =========================== */
+
+    .hero-nav {
+
+        top: 8px;
+
+        right: 8px;
+
+        gap: 3px;
+
+    }
+
+
+    /* ===========================
+       DROPDOWN CONTAINER OVERRIDE
+       ============================ */
+
+    .dropdown-menu {
+
+        top: 32px;
+
+        right: 0;
+
+        gap: 4px;
+
+    }
+
+ /* =========================
+    DROPDOWN BUTTONS OVERRIDE
+    ========================= */
+
+    .dropdown-btn {
+
+        gap: 2px;
+
+        padding: 4px 6px;
+
+        font-size: 0.46rem;
+
+    }
+
+
+    /* =======================
+       SWITCH BUTTONS OVERRIDE
+       (HOME EMAIL MENU
+       ABOUT WORKS JOIN EDIT)
+       ======================= */
+
+    .switch-btn {
+
+        width: 51px;
+
+        height: 26px;
+
+        border-radius: 9999px;
+
+        -webkit-tap-highlight-color:
+        transparent;
+
+        user-select: none;
+
+        touch-action:
+        manipulation;
+
+    }
+
+
+    /* ==============
+       LABEL OVERRIDE
+       ============== */
+
+    .switch-label {
+
+        justify-content:
+        flex-end;
+
+        font-size:
+        0.32rem;
+
+        letter-spacing:
+        0.3px;
+
+        padding-right:
+        4px;
+
+    }
+
+
+    /* =============
+       KNOB OVERRIDE
+       ============= */
+
+    .switch-knob {
+
+        left: 3px;
+
+        top: 3px;
+
+        width: 20px;
+
+        height: 20px;
+
+        font-size:
+        0.55rem;
+
+    }
+
+
+    /* ============
+       DOT OVERRIDE
+       ============ */
+
+    .switch-dot {
+
+        top: 3px;
+
+        right: 3px;
+
+        width: 3px;
+
+        height: 3px;
+
+    }
+
+
+    /* =====================
+       INNER TRACK OVERRIDE
+       ===================== */
+
+    .switch__base-inner {
+
+        inset: 2px;
+
+    }
+
+
+    /* ======================
+       KNOB TRAVEL OVERRIDE
+       ====================== */
+
+    .switch-btn.active
+    .switch-knob {
+
+        transform:
+        translateX(25px);
+
+    }
+
+
+    /* ======================
+       LABEL TRAVEL OVERRIDE
+       ====================== */
+
+    .switch-btn.active
+    .switch-label {
+
+        transform:
+        translateX(-20px);
+
+    }
+
+
+    /* ======================
+       DROPDOWN WIDTH MATCH 
+       SWITCHES OVERRIDE
+       ====================== */
+
+    .dropdown-menu
+    .switch-btn {
+
+        width: 51px;
+
+        height: 26px;
+
+    }
+
+
+    /* ==========================
+       REMOVE BLUE FLASH OVERRIDE
+       ========================== */
+
+    .switch-btn,
+
+    .switch-btn *,
+
+    .switch-btn:focus,
+
+    .switch-btn:active,
+
+    .switch-btn:focus-visible {
+
+        outline: none;
+
+        -webkit-tap-highlight-color:
+        transparent;
+
+    }
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*=============================
+  LIQUID METAL MODE CSS
+  MODE BASE
+===============================*/
+
+
+
+body.liquid-mode .switch-btn {
+
+    background: linear-gradient(145deg, #2d2d2d, #121212);
+
+    box-shadow:
+
+12px 12px 18px rgba(0,0,0,.55)
+
+        0 0 12px rgba(180,180,180,.15),
+        inset 0 0 8px rgba(255,255,255,.05);
+
+}
+
+
+
+/*=============================
+  LIQUID CHROME BORDER (CORE EFFECT)
+  MERCURY RING
+===============================*/
+
+body.liquid-mode .switch-btn::before {
+
+    content: "";
+
+    position: absolute;
+
+    inset: 0;
+
+    border-radius: inherit;
+
+    padding: 1.5px;
+
+    background: conic-gradient(
+
+        from 0deg,
+
+        #ffffff,
+        #b8b8b8,
+        #f5f5f5,
+        #6e6e6e,
+        #ffffff,
+        #9a9a9a,
+        #ffffff
+
+    );
+
+    -webkit-mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+
+    -webkit-mask-composite: xor;
+
+    mask-composite: exclude;
+
+    animation: liquidSpin 3.5s linear infinite;
+
+    opacity: .9;
+
+    filter: blur(.2px);
+
+}
+
+
+
+/*=============================
+  INNER LIQUID FLOW LAYER 
+  (MOVING REFLECTION)
+===============================*/
+
+
+body.liquid-mode .switch-btn::after {
+
+    content: "";
+
+    position: absolute;
+
+    inset: 0;
+
+    border-radius: inherit;
+
+    background: linear-gradient(
+
+        120deg,
+
+        transparent 0%,
+        rgba(255,255,255,.25) 40%,
+        rgba(255,255,255,.6) 50%,
+        rgba(255,255,255,.25) 60%,
+        transparent 100%
+
+    );
+
+    transform: translateX(-120%);
+
+    animation: liquidSweep 2.8s ease-in-out infinite;
+
+    mix-blend-mode: screen;
+
+}
+
+
+
+
+/*=============================
+  LIQUID KNOB 
+  (EDGE ONLY — NOT FULL FILL)
+===============================*/
+
+body.liquid-mode .switch-knob {
+
+    background: linear-gradient(145deg, #0e0e0e, #1a1a1a);
+
+    box-shadow:
+        inset 0 0 8px rgba(255,255,255,.08),
+        0 0 10px rgba(255,255,255,.05);
+
+}
+
+
+
+
+
+/*=============================
+  METAL RIM ON KNOB 
+  (NOT FULL LIQUID)
+===============================*/
+
+body.liquid-mode .switch-knob::before {
+
+    content: "";
+
+    position: absolute;
+
+    inset: -1px;
+ 
+    z-index: 999;
+
+    border-radius: 50%;
+
+    padding: 1px;
+
+    background: conic-gradient(
+
+        #ffffff,
+        #7a7a7a,
+        #eaeaea,
+        #5a5a5a,
+        #ffffff
+
+    );
+
+    -webkit-mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+
+    -webkit-mask-composite: xor;
+
+    mask-composite: exclude;
+
+    animation: knobMetal 2.5s linear infinite;
+
+}
+
+
+
+
+/*=============================
+  KNOB HIGHLIGHT 
+  THAT FOLLOWS MOVEMENT
+===============================*/
+
+
+body.liquid-mode .switch-knob::after {
+
+    content: "";
+
+    position: absolute;
+
+    top: 3px;
+
+    left: 3px;
+
+    width: 40%;
+
+    height: 40%;
+
+    border-radius: 50%;
+
+    background: radial-gradient(
+
+        rgba(255,255,255,.9),
+        transparent
+
+    );
+
+    opacity: .85;
+
+}
+
+
+body.liquid-mode .switch-knob::after { 
+                transform: translate( 
+
+calc((var(--mx, .1)
+                 - .100) 
+                      * 12.5px),
+
+calc((var(--my, .1)
+                 - .100) 
+                      * 12.5px) 
+
+    );}
+
+
+
+
+
+
+/*=============================
+  ANIMATIONS
+===============================*/
+
+@keyframes liquidSpin {
+
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+
+}
+
+@keyframes liquidSweep {
+
+    0% { transform: translateX(-120%); }
+    50% { transform: translateX(120%); }
+    100% { transform: translateX(-120%); }
+
+}
+
+@keyframes knobMetal {
+
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(-360deg); }
+
+} 
+
+
+
+/*=============================
+  JS - CSS ADDITION 
+  (IMPORTANT LINK)
+  JS update --liq dynamically
+===============================*/
+
+body.liquid-mode .switch-btn {
+    --liq: 0;
+} 
+
+
+
+
+
+
+
+
+
+
+
+
+/* ==================================
+   THIS COMMENTED OUT BLOCK CODE IS
+   A SUBSTITUTE SWITCH RESIZING 
+   OVERRIDE BLOCK CODE IS FOR 
+   MOBILE NORMAL BROWSER (MNB)
+   ================================== */
+/*
+@media (max-width: 767px) {
+
+    /* ======================
+       HERO NAV CONTAINER
+    ====================== */
+/*
+    .hero-nav {
+
+        top: 10px;
+
+        right: 10px;
+
+        gap: 4px;
+
+    }
+
+
+    /* ======================
+       DROPDOWN CONTAINER
+    ====================== */
+/*
+    .dropdown-menu {
+
+        top: 38px;
+
+        right: 0;
+
+        gap: 5px;
+
+    }
+
+
+    /* ======================
+       SWITCH BUTTONS
+       (HOME EMAIL MENU
+       ABOUT WORKS JOIN EDIT)
+    ====================== */
+/*
+    .switch-btn {
+
+        width: 60px;
+
+        height: 30px;
+
+        border-radius: 9999px;
+
+        -webkit-tap-highlight-color:
+        transparent;
+
+        user-select: none;
+
+        touch-action:
+        manipulation;
+
+    }
+
+
+    /* ======================
+       LABEL
+    ====================== */
+/*
+    .switch-label {
+
+        justify-content:
+        flex-end;
+
+        font-size:
+        0.38rem;
+
+        letter-spacing:
+        0.4px;
+
+        padding-right:
+        5px;
+
+    }
+
+
+    /* ======================
+       KNOB
+    ====================== */
+/*
+    .switch-knob {
+
+        left: 3px;
+
+        top: 3px;
+
+        width: 24px;
+
+        height: 24px;
+
+        font-size:
+        0.65rem;
+
+    }
+
+
+    /* ======================
+       DOT
+    ====================== */
+/*
+    .switch-dot {
+
+        top: 4px;
+
+        right: 4px;
+
+        width: 3px;
+
+        height: 3px;
+
+    }
+
+
+    /* ======================
+       INNER TRACK
+    ====================== */
+/*
+    .switch__base-inner {
+
+        inset: 3px;
+
+    }
+
+
+    /* ======================
+       KNOB TRAVEL
+    ====================== */
+/*
+    .switch-btn.active
+    .switch-knob {
+
+        transform:
+        translateX(30px);
+
+    }
+
+
+    /* ======================
+       LABEL TRAVEL
+    ====================== */
+/*
+    .switch-btn.active
+    .switch-label {
+
+        transform:
+        translateX(-24px);
+
+    }
+
+
+    /* ======================
+       DROPDOWN WIDTH
+       MATCH SWITCHES
+    ====================== */
+/*
+    .dropdown-menu
+    .switch-btn {
+
+        width: 60px;
+
+        height: 30px;
+
+    }
+
+
+    /* ======================
+       REMOVE BLUE FLASH
+    ====================== */
+/*
+    .switch-btn,
+
+    .switch-btn *,
+
+    .switch-btn:focus,
+
+    .switch-btn:active,
+
+    .switch-btn:focus-visible {
+
+        outline: none;
+
+        -webkit-tap-highlight-color:
+        transparent;
+
+    }
+
+}
+
+*/
