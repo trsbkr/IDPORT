@@ -1357,15 +1357,13 @@ const Hero = (() => {
             });
         }
 
-        const publicAPI = Object.freeze({
+const publicAPI = Object.freeze({
             info: () => ({ ...ModuleInfo }),
             version: () => ModuleInfo.version,
             isInitialized: () => currentStatus === STATUS.ACTIVE,
             getStatus: () => currentStatus,
             getState: () => ({ ...state }),
             on, off, once, ready,
-            engine: getEngine,
-            engines: () => Object.keys(engines),
 
             init: () => { if (currentStatus === STATUS.UNINITIALIZED) init(); },
             destroy: () => destroy(),
@@ -1404,12 +1402,12 @@ const Hero = (() => {
                 module: ModuleInfo,
                 status: currentStatus,
                 heroState: { ...state },
-                engines: Object.keys(engines),
+                engines: Object.keys(engines),   // names only — no engine access, safe for debugging
                 runtime: engines.runtimeBridge?.diagnostics?.() ?? null,
                 animation: engines.animation?.diagnostics?.() ?? null
             })
         });
-
+       
         window.Hero = publicAPI;
     }
 
