@@ -1279,27 +1279,65 @@ const Hero = (() => {
         engines.animation?.resume();
     }
 
-    function destroy() {
-        if (currentStatus === STATUS.UNINITIALIZED || currentStatus === STATUS.DESTROYED) return;
+/* ============================================================
+   FIX 2 — UNIFIED DESTROY ARCHITECTURE
+============================================================ */
 
-        dispatchHeroEvent("hero:destroying", { timestamp: Date.now() });
+function destroy() {
 
-        while (listeners.length) {
-            const cleanup = listeners.pop();
-            try { cleanup(); } catch (err) { console.error("[Hero] Cleanup failed:", err); }
+    if (currentStatus === STATUS.UNINITIALIZED || currentStatus === STATUS.DESTROYED) return;
+
+    dispatchHeroEvent("hero:destroying", { timestamp: Date.now() });
+
+    // 1. Per-engine cleanup FIRST — engines may reference DOM/state
+    //    that shared listener cleanup is about to tear down.
+
+    Object.entries(engines).forEach(([name, engine]) => {
+
+        const teardown = engine?.destroy ?? engine?.cleanup;
+
+        if (typeof teardown === "function") {
+
+            try { teardown.call(engine); }
+
+            catch (err) {
+                console.error(`[Hero] Engine cleanup failed (${name}):`, err);
+            }
+
         }
 
-        clearOwnKeys(engines);
-        clearOwnKeys(elements);
-        clearOwnKeys(state);
+    });
 
-        delete window.Hero;
-        delete window.__heroReceive;
+    // 2. Shared listener cleanup
 
-        currentStatus = STATUS.DESTROYED;
-        dispatchHeroEvent("hero:destroyed", { timestamp: Date.now() });
-        console.log("[Hero] Destroyed.");
+    while (listeners.length) {
+
+        const cleanup = listeners.pop();
+
+        try { cleanup(); }
+
+        catch (err) {
+            console.error("[Hero] Cleanup failed:", err);
+        }
+
     }
+
+    // 3. Clear internal state
+
+    clearOwnKeys(engines);
+    clearOwnKeys(elements);
+    clearOwnKeys(state);
+
+    delete window.Hero;
+    delete window.__heroReceive;
+
+    currentStatus = STATUS.DESTROYED;
+
+    dispatchHeroEvent("hero:destroyed", { timestamp: Date.now() });
+
+    console.log("[Hero] Destroyed.");
+
+}
 
     function refresh() {
         destroy();
