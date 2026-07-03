@@ -1,10 +1,10 @@
 
 
-```
+
 
 # IDPORT — Public API & Event Contract Reference
 
-```
+
 
 **Purpose:** single source of truth for every public method name and custom event name in use across the codebase. Before any file calls a method or listens for an event owned by another file, the name must appear here first. If it doesn't exist yet, add it here before implementing it — never after.
 
@@ -152,8 +152,6 @@ All names in section 3's "Bridge forwards" column, plus:
 *When a new method or event is added anywhere in the codebase, add its row here in the same commit. When in doubt about whether a name already exists, grep the actual repo — don't rely on memory or a prior version of this document.*
 
 
-
-```
 
 
 
