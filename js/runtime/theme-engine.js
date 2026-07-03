@@ -1,11 +1,15 @@
 // theme-engine.js - theme management
 export const ThemeEngine = {
   current: 'default',
-  modeMap: {
+
+  modeMap: Object.freeze({
     'charcoal-crimson': 'liquid-mode'
     /* future themes map here, e.g. 'emerald-aurora': 'neon-mode' */
-  },
+  }),
+
   set(name) {
+    if (this.current === name) return;
+
     this.current = name;
     const mode = this.modeMap[name] || 'normal-mode';
 
