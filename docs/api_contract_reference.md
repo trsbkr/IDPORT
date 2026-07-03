@@ -1,21 +1,16 @@
 
 
+```
 
+# IDPORT — Public API & Event Contract Reference
 
 ```
-# IDPORT — Public API & Event Contract Reference
-**Purpose:** single source of truth for every public method name 
-and custom event name in use across the codebase. 
-Before any file calls a method or listens for an event owned by another file, 
-the name must appear here first. If it doesn't exist yet, 
-add it here before implementing it — never after.
 
-**Last verified against live repo:** commit `6205591` 
-(direct grep of committed source, not memory).
+**Purpose:** single source of truth for every public method name and custom event name in use across the codebase. Before any file calls a method or listens for an event owned by another file, the name must appear here first. If it doesn't exist yet, add it here before implementing it — never after.
 
-**Update rule:** whenever a file that owns a method or event changes, 
-re-verify this document against the actual code before trusting it. 
-This document describes what IS committed, not what is planned or intended.
+**Last verified against live repo:** commit `6205591` (direct grep of committed source, not memory).
+
+**Update rule:** whenever a file that owns a method or event changes, re-verify this document against the actual code before trusting it. This document describes what IS committed, not what is planned or intended.
 
 ---
 
@@ -70,10 +65,7 @@ This document describes what IS committed, not what is planned or intended.
 | `engines.animation` | `enter()`, `exit(cb)`, `pause()`, `resume()`, `diagnostics()` |
 | `engines.runtimeBridge` | `send(type, data)`, `receive(type, data)`, `notifyNavigate(target)`, `isConnected()`, `diagnostics()` |
 
-**⚠️ Historical bug this table exists to prevent:
-** an earlier draft of the Runtime Bridge called `engines.quote.load()` 
-and `engines.portrait.set()` — neither ever existed under those names. 
-Always check this table before writing a cross-engine call.
+**⚠️ Historical bug this table exists to prevent:** an earlier draft of the Runtime Bridge called `engines.quote.load()` and `engines.portrait.set()` — neither ever existed under those names. Always check this table before writing a cross-engine call.
 
 ---
 
@@ -89,8 +81,7 @@ Always check this table before writing a cross-engine call.
 | `hero:theme:changed` | Engine 7 | Bridge forwards |
 | `hero:portrait:loading` / `:loaded` / `:error` | Engine 8 | Bridge forwards `:loaded` only |
 | `hero:portrait:change-request` | Engine 8 | Animation Engine (crossfade envelope) |
-| `hero:environment:update` | Bridge (Engine 11, relaying Runtime's `environment:update` message) | Portrait Engine (`updateLighting`) — 
-⚠️ currently registered **twice**, needs dedup. Animation Engine (stub only). Theme Engine — **not yet wired**. |
+| `hero:environment:update` | Bridge (Engine 11, relaying Runtime's `environment:update` message) | Portrait Engine (`updateLighting`) — ⚠️ currently registered **twice**, needs dedup. Animation Engine (stub only). Theme Engine — **not yet wired**. |
 | `hero:quote:render` | Engine 9 | Animation Engine (crossfade), Bridge forwards |
 | `hero:quote:suspended` / `hero:quote:resumed` | Engine 9 | — |
 | `hero:quotes:loaded` | Engine 9 | — |
@@ -109,10 +100,7 @@ Always check this table before writing a cross-engine call.
 
 ## 5. Runtime Bridge Message Protocol (`Hero.bridge.send/receive`, NOT DOM CustomEvents)
 
-These are payloads passed through `runtime.receive(type, packet)` and `window.__heroReceive(type, payload)` — 
-a separate channel from the DOM events above. Full envelope shape: `{id, type, data, source, timestamp, protocolVersion}`. 
-**The second argument received by `runtime.receive()` is the FULL envelope — access real content via `payload.data.x`, 
-not `payload.x`.**
+These are payloads passed through `runtime.receive(type, packet)` and `window.__heroReceive(type, payload)` — a separate channel from the DOM events above. Full envelope shape: `{id, type, data, source, timestamp, protocolVersion}`. **The second argument received by `runtime.receive()` is the FULL envelope — access real content via `payload.data.x`, not `payload.x`.**
 
 ### Hero → Runtime (via `sendToRuntime`, requires `window.Runtime.receive` to exist)
 All names in section 3's "Bridge forwards" column, plus:
@@ -132,9 +120,7 @@ All names in section 3's "Bridge forwards" column, plus:
 | `portrait:set` | `engines.portrait.requestChange(payload.src, {animate})` | `{ src, animate }` |
 | `environment:update` | dispatches `hero:environment:update` DOM event | `{ x, y, intensity, depth, ... }` |
 
-**⚠️ Status: this entire Runtime→Hero direction is currently non-functional.
-** Nothing on the Runtime side calls `window.__heroReceive(...)`. 
-This table documents the contract Hero is *ready* to receive, not a working pipeline yet.
+**⚠️ Status: this entire Runtime→Hero direction is currently non-functional.** Nothing on the Runtime side calls `window.__heroReceive(...)`. This table documents the contract Hero is *ready* to receive, not a working pipeline yet.
 
 ---
 
@@ -147,9 +133,7 @@ This table documents the contract Hero is *ready* to receive, not a working pipe
 | `Runtime.SectionController.get(name)` | `(string) => instance \| null` | |
 | `Runtime.receive(type, payload)` | ❌ **does not exist yet** | required for Hero's outbound queue to ever flush |
 
-**⚠️ Known duplication:** `js/runtime/section-controller.js` (separate ES module file) still exports a different, 
-stale `SectionController` (`{register(){}, mount(){}}`) that nothing imports. The real, 
-working one lives inline inside `runtime.js`. Not yet reconciled.
+**⚠️ Known duplication:** `js/runtime/section-controller.js` (separate ES module file) still exports a different, stale `SectionController` (`{register(){}, mount(){}}`) that nothing imports. The real, working one lives inline inside `runtime.js`. Not yet reconciled.
 
 ---
 
@@ -161,13 +145,20 @@ working one lives inline inside `runtime.js`. Not yet reconciled.
 | `js/runtime/event-engine.js` | Functional pub/sub (`EventEngine.on/emit`) but **unused by anything else** — not yet part of any real contract |
 | `js/runtime/environment-engine.js` | Stub — `{ isTouch }` only, no origination logic |
 | `js/runtime/section-controller.js` | Stub, orphaned (see §6) |
-| `state-engine.js`, `motion-engine.js`, `scheduler.js`, `transition-engine.js`, `performance-engine.js`, `layout-engine.js`, `asset-manager.js`, `rendering-services.js`, `theme-library.js`, `component-registry.js` 
-| Not re-verified since early session — re-audit before building against them |
+| `state-engine.js`, `motion-engine.js`, `scheduler.js`, `transition-engine.js`, `performance-engine.js`, `layout-engine.js`, `asset-manager.js`, `rendering-services.js`, `theme-library.js`, `component-registry.js` | Not re-verified since early session — re-audit before building against them |
 
 ---
 
-*When a new method or event is added anywhere in the codebase, add its row here in the same commit. 
-When in doubt about whether a name already exists, grep the actual repo — don't rely on memory 
-or a prior version of this document.*
+*When a new method or event is added anywhere in the codebase, add its row here in the same commit. When in doubt about whether a name already exists, grep the actual repo — don't rely on memory or a prior version of this document.*
+
+
 
 ```
+
+
+
+
+
+
+
+
