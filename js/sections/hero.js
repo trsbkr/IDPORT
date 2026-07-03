@@ -1143,33 +1143,45 @@ const Hero = (() => {
             }
         }
 
-        function receiveFromRuntime(type, payload = {}) {
-            switch (type) {
-                case "theme:change":
-                    engines.theme?.apply(payload.theme);
-                    break;
-                case "hero:reset":
-                    engines.stateReset?.reset();
-                    break;
-                case "hero:enter":
-                    engines.animation?.enter();
-                    break;
-                case "hero:exit":
-                    engines.animation?.exit(payload.callback);
-                    break;
-                case "quotes:load":
-                    engines.quote?.loadQuotes(payload.quotes);
-                    break;
-                case "portrait:set":
-                    engines.portrait?.requestChange(payload.src, { animate: payload.animate !== false });
-                    break;
-                case "environment:update":
-                    dispatchHeroEvent("hero:environment:update", payload);
-                    break;
-                default:
-                    console.info(`[Hero] Runtime Bridge: unhandled message "${type}".`);
-            }
-        }
+function receiveFromRuntime(type, payload = {}) {
+    switch (type) {
+
+        case "theme:change":
+            Hero.theme(payload.theme);                    // Use public API
+            break;
+
+        case "hero:reset":
+            Hero.reset();
+            break;
+
+        case "hero:enter":
+            Hero.enter();
+            break;
+
+        case "hero:exit":
+            Hero.exit(payload.callback);
+            break;
+
+        case "quotes:load":
+            Hero.quotes.loadQuotes(payload.quotes);       // Standardized name
+            break;
+
+        case "portrait:set":
+            Hero.portrait.requestChange(payload.src, {
+                animate: payload.animate !== false
+            });
+            break;
+
+        case "environment:update":
+            Hero.portrait.updateEnvironment(payload);
+            Hero.animation.updateEnvironment(payload);
+            dispatchHeroEvent("hero:environment:update", payload);
+            break;
+
+        default:
+            console.info(`[Hero Bridge] Unhandled message: ${type}`);
+    }
+}
 
         const ForwardEvents = [
             "hero:initialized", "hero:navigation:started", "hero:navigation:completed",
