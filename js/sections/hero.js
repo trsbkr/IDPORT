@@ -633,10 +633,6 @@ const Hero = (() => {
         listeners.push(() => clearTimeout(resizeTimer));
         listeners.push(() => portraitCache.clear());
 
-              /* Environment Update Listener - Runtime → Portrait Lighting */
-        addManagedListener(document, "hero:environment:update", (e) => {
-            updateLighting(e.detail || {});
-        });
 
         function updateLighting(environment = {}) {
             portraitImg.style.setProperty("--portrait-light-x", environment.x ?? 0.5);
