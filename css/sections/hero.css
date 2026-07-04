@@ -1031,7 +1031,7 @@ body.liquid-mode .switch-btn {
 
     box-shadow:
 
-12px 12px 18px rgba(0,0,0,.55)
+12px 12px 18px rgba(0,0,0,.55),
 
         0 0 12px rgba(180,180,180,.15),
         inset 0 0 8px rgba(255,255,255,.05);
