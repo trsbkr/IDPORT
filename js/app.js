@@ -1,339 +1,497 @@
-// app.js - Website Initialiser
-/* import './runtime/runtime.js';
+// app.js — IDPORT Application Orchestrator (Production-Grade Bootstrap)
+// Owns: boot, readiness, shutdown, diagnostics, global error handling,
+// runtime health watch, dev banner, feature flags.
+// Does NOT own: Hero/menu/nav/liquid logic (sections own their internals).
 
-(function init(){
-  const app = document.getElementById('app');
-  app.innerHTML = '<main>Welcome to IDPORT</main>';
-  // initialize runtime
-  if(window.Runtime && typeof window.Runtime.init === 'function'){
-    window.Runtime.init();
+(function AppBootstrap() {
+  "use strict";
+
+  /* ============================================================
+  CONFIG + FEATURE FLAGS
+  ============================================================ */
+
+  const FLAGS = Object.freeze({
+    debug: true,                // verbose console logging
+    devBanner: true,            // show a small dev banner in non-production
+    runtimeHealthWatch: true,   // periodic health check
+    captureGlobalErrors: true,  // window.onerror
+    captureRejections: true,    // unhandledrejection
+  });
+
+  const AppConfig = Object.freeze({
+    name: "IDPORT",
+    layer: "AppOrchestrator",
+    version: "2.1.0",
+    build: "development",
+    env:
+      (typeof location !== "undefined" &&
+        /localhost|127\.0\.0\.1|\.local\b/i.test(location.hostname))
+        ? "development"
+        : "production",
+
+    // Naming keys must remain stable for analytics + SectionController registry
+    sections: Object.freeze({
+      hero: "hero",
+      // future: about, carousel, featured, testimonials, services, footer
+    }),
+
+    // Readiness policy:
+    // App is "ready" when Runtime initialized AND (if #hero exists) Hero adopted.
+    readyTimeoutMs: 8000,
+
+    // Health watch
+    healthIntervalMs: 10000,
+    healthUnhealthyThreshold: 2, // consecutive failures before emitting app:runtime:unhealthy
+  });
+
+  const now = () => Date.now();
+
+  const log = {
+    info: (...a) => FLAGS.debug && console.info("[app]", ...a),
+    warn: (...a) => console.warn("[app]", ...a),
+    error: (...a) => console.error("[app]", ...a),
+  };
+
+  /* ============================================================
+  INTERNAL STATE
+  ============================================================ */
+
+  const state = {
+    started: false,
+    startTime: now(),
+
+    runtimeInitCalled: false,
+    runtimeInitOk: false,
+
+    heroPresent: false,
+    heroAdopted: false,
+
+    ready: false,
+    readyAt: null,
+
+    shutdown: false,
+
+    // health
+    healthTimer: null,
+    healthConsecutiveFailures: 0,
+
+    // teardown registry (global listeners, timers, injected nodes)
+    teardowns: [],
+  };
+
+  function addTeardown(fn) {
+    if (typeof fn === "function") state.teardowns.push(fn);
   }
-})(); */
 
+  function dispatchAppEvent(name, detail = {}) {
+    document.dispatchEvent(
+      new CustomEvent(name, { bubbles: true, cancelable: false, detail })
+    );
+  }
 
+  function domHas(id) {
+    return !!document.getElementById(id);
+  }
 
+  function withTimeout(promise, ms, label) {
+    let t = null;
+    const timeout = new Promise((_, reject) => {
+      t = setTimeout(
+        () => reject(new Error(`${label || "operation"} timed out after ${ms}ms`)),
+        ms
+      );
+    });
+    return Promise.race([promise, timeout]).finally(() => clearTimeout(t));
+  }
 
+  /* ============================================================
+  DIAGNOSTICS (PUBLIC)
+  ============================================================ */
 
+  function runtimeSnapshot() {
+    const Runtime = window.Runtime || null;
+    const SectionController = Runtime?.SectionController || null;
 
-/* ========================
-   THE HOME LUANCH LOGIC OF
-   THE ACTIVE STATE OF BOTH 
-   THE DOT AND KNOB RESIDING 
-   WITHIN THE MAIN SWITCH 
-   ======================== */
+    return {
+      present: !!Runtime,
+      hasInit: typeof Runtime?.init === "function",
+      hasReceive: typeof Runtime?.receive === "function", // per your contract: currently missing
+      sectionController: {
+        present: !!SectionController,
+        hasAdopt: typeof SectionController?.adopt === "function",
+        hasGet: typeof SectionController?.get === "function",
+      },
+    };
+  }
 
-document
-.querySelectorAll(
-    ".switch-btn[data-target]"
-)
-.forEach(btn => {
+  function heroSnapshot() {
+    const Hero = window.Hero || null;
+    let status = null;
+    try {
+      status = typeof Hero?.getStatus === "function" ? Hero.getStatus() : null;
+    } catch (_) {}
 
-    btn.addEventListener(
+    return {
+      present: !!Hero,
+      readyFn: typeof Hero?.ready === "function",
+      getStatusFn: typeof Hero?.getStatus === "function",
+      status,
+      adopted: state.heroAdopted,
+      mountPresent: state.heroPresent,
+    };
+  }
 
-        "click",
-        () => {
+  function diagnostics() {
+    return {
+      app: {
+        name: AppConfig.name,
+        version: AppConfig.version,
+        build: AppConfig.build,
+        env: AppConfig.env,
+        started: state.started,
+        ready: state.ready,
+        readyAt: state.readyAt,
+        uptimeMs: now() - state.startTime,
+        shutdown: state.shutdown,
+        flags: { ...FLAGS },
+      },
+      runtime: runtimeSnapshot(),
+      hero: heroSnapshot(),
+    };
+  }
 
-            btn.classList.add(
-                "active"
-            );
+  /* ============================================================
+  APP READY (PROMISE + EVENT)
+  ============================================================ */
 
-            setTimeout(() => {
-            window.location.href =
-            btn.dataset.target;
-              /*  btn.classList.remove(
-                    "active"
-                ); */
+  let readyResolve;
+  let readyReject;
+  const readyPromise = new Promise((resolve, reject) => {
+    readyResolve = resolve;
+    readyReject = reject;
+  });
 
-            }, 450);
+  function markReady() {
+    if (state.ready || state.shutdown) return;
 
-        }
-    ); 
+    state.ready = true;
+    state.readyAt = now();
 
-});
+    const payload = diagnostics();
+    dispatchAppEvent("app:ready", payload);
+    readyResolve(payload);
 
+    log.info("App ready.", {
+      readyAt: state.readyAt,
+      uptimeMs: payload.app.uptimeMs,
+      runtime: payload.runtime.present,
+      heroAdopted: payload.hero.adopted,
+    });
+  }
 
+  function markReadyFailed(error) {
+    if (state.ready || state.shutdown) return;
 
+    const payload = { error: String(error?.message || error), diagnostics: diagnostics() };
+    dispatchAppEvent("app:ready:failed", payload);
+    readyReject(error);
 
+    log.error("App failed to become ready:", error);
+  }
 
-window.addEventListener("pageshow", () => {
+  /* ============================================================
+  GLOBAL ERROR HANDLERS
+  ============================================================ */
 
-    document
-        .querySelectorAll(".switch-btn")
-        .forEach(btn => {
+  function installGlobalHandlers() {
+    if (FLAGS.captureGlobalErrors) {
+      const onError = (eventOrMessage, source, lineno, colno, error) => {
+        const message =
+          typeof eventOrMessage === "string"
+            ? eventOrMessage
+            : eventOrMessage?.message || "Unknown error";
 
-            btn.classList.remove("active");
-
+        dispatchAppEvent("app:fatal", {
+          type: "error",
+          message,
+          source,
+          lineno,
+          colno,
+          stack: error?.stack || null,
+          diagnostics: diagnostics(),
         });
 
-    const dropdown =
-        document.getElementById(
-            "dropdown-menu"
-        );
+        // return false so browser still logs default error
+        return false;
+      };
 
-    if (dropdown) {
-
-        dropdown.classList.remove(
-            "active"
-        );
-
+      window.addEventListener("error", onError);
+      addTeardown(() => window.removeEventListener("error", onError));
     }
 
-});
+    if (FLAGS.captureRejections) {
+      const onRejection = (event) => {
+        const reason = event?.reason;
+        dispatchAppEvent("app:fatal", {
+          type: "unhandledrejection",
+          message: String(reason?.message || reason || "Unhandled rejection"),
+          stack: reason?.stack || null,
+          diagnostics: diagnostics(),
+        });
+      };
 
-
-
-
-
-
-
-
-
-/* ========================
-   THE MENU LUANCH LOGIC OF
-   THE ACTIVE STATE OF BOTH 
-   THE DOT AND KNOB RESIDING 
-   WITHIN THE MAIN SWITCH 
-   ======================== */
-
-const menuSwitch =
-document.getElementById(
-    "menu-switch"
-);
-
-const dropdown =
-document.getElementById(
-    "dropdown-menu"
-);
-
-menuSwitch.addEventListener(
-    "click",
-    () => {
-
-        menuSwitch.classList.toggle(
-            "active"
-        );
-
-        dropdown.classList.toggle(
-            "active"
-        );
-
+      window.addEventListener("unhandledrejection", onRejection);
+      addTeardown(() => window.removeEventListener("unhandledrejection", onRejection));
     }
-);
+  }
 
+  /* ============================================================
+  DEVELOPMENT BANNER
+  ============================================================ */
 
+  function installDevBanner() {
+    if (!FLAGS.devBanner) return;
+    if (AppConfig.env !== "development") return;
 
+    const banner = document.createElement("div");
+    banner.setAttribute("data-idport-dev-banner", "true");
+    banner.textContent = `${AppConfig.name} DEV — v${AppConfig.version} (${AppConfig.build})`;
+    banner.style.cssText = [
+      "position:fixed",
+      "left:12px",
+      "bottom:12px",
+      "z-index:9999",
+      "padding:8px 10px",
+      "font:12px/1.2 system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
+      "letter-spacing:.2px",
+      "color:rgba(255,255,255,.92)",
+      "background:rgba(10,10,12,.65)",
+      "border:1px solid rgba(220,26,42,.55)",
+      "border-radius:10px",
+      "backdrop-filter: blur(10px)",
+      "user-select:none",
+      "pointer-events:none",
+    ].join(";");
 
-/* =====================================================
-   🌊 LIQUID METAL REACTIVE MOVEMENT ENGINE (NEW LAYER)
-===================================================== */
+    document.body.appendChild(banner);
+    addTeardown(() => banner.remove());
+  }
 
-const liquidSwitches = document.querySelectorAll(".switch-btn");
+  /* ============================================================
+  RUNTIME INIT + HEALTH WATCH
+  ============================================================ */
 
-liquidSwitches.forEach((btn) => {
+  function initRuntime() {
+    const Runtime = window.Runtime;
 
-    let rect;
+    state.runtimeInitCalled = true;
 
-    const updateBounds = () => {
-        rect = btn.getBoundingClientRect();
+    if (!Runtime) {
+      log.warn("Runtime missing on window. Ensure runtime.js is loaded before app.js.");
+      state.runtimeInitOk = false;
+      return null;
+    }
+
+    if (typeof Runtime.init === "function") {
+      try {
+        Runtime.init();
+        state.runtimeInitOk = true;
+        log.info("Runtime.init() called.");
+      } catch (err) {
+        state.runtimeInitOk = false;
+        log.error("Runtime.init() threw:", err);
+      }
+    } else {
+      state.runtimeInitOk = false;
+      log.warn("Runtime exists but Runtime.init() is not a function.");
+    }
+
+    return Runtime;
+  }
+
+  function startRuntimeHealthWatch() {
+    if (!FLAGS.runtimeHealthWatch) return;
+
+    const tick = () => {
+      if (state.shutdown) return;
+
+      const snap = runtimeSnapshot();
+
+      // Define "healthy" for now: Runtime exists, SectionController exists + adopt exists.
+      // (You can tighten later once Runtime.receive exists.)
+      const healthy =
+        snap.present &&
+        snap.sectionController.present &&
+        snap.sectionController.hasAdopt;
+
+      if (!healthy) {
+        state.healthConsecutiveFailures += 1;
+
+        if (state.healthConsecutiveFailures >= AppConfig.healthUnhealthyThreshold) {
+          dispatchAppEvent("app:runtime:unhealthy", {
+            failures: state.healthConsecutiveFailures,
+            runtime: snap,
+            diagnostics: diagnostics(),
+          });
+        }
+      } else {
+        if (state.healthConsecutiveFailures > 0) {
+          dispatchAppEvent("app:runtime:healthy", {
+            recoveredFromFailures: state.healthConsecutiveFailures,
+            runtime: snap,
+          });
+        }
+        state.healthConsecutiveFailures = 0;
+      }
     };
 
-    updateBounds();
-    window.addEventListener("resize", updateBounds);
-
-
-    /* --------------------------------
-       POINTER TRACKING (FLOW FIELD)
-    -------------------------------- */
-
-    btn.addEventListener("pointermove", (e) => {
-       
-
-        const x = (e.clientX - rect.left) / rect.width;
-        const y = (e.clientY - rect.top) / rect.height;
-
-        // clamp 0 → 1
-        const mx = Math.min(Math.max(x, 0), 1);
-        const my = Math.min(Math.max(y, 0), 1);
-
-        btn.style.setProperty("--mx", mx.toFixed(3));
-        btn.style.setProperty("--my", my.toFixed(3));
-
-       
-
-         
-
-    });
-
-
-    /* --------------------------------
-       TOUCH / PRESS INTENSITY
-    -------------------------------- */
-
-    btn.addEventListener("pointerdown", () => {
-        btn.classList.add("pressing");
-        btn.style.setProperty("--glow", "1");
-    });
-
-    btn.addEventListener("pointerup", () => {
-        btn.classList.remove("pressing");
-        btn.style.setProperty("--glow", "0");
-    });
-
-    btn.addEventListener("pointerleave", () => {
-        btn.classList.remove("pressing");
-        btn.style.setProperty("--glow", "0");
-    });
-
-});
-
-
-
-/*=============================
-  JS — LIQUID METAL REACTIVE
-  ENGINE (KNOB-AWARE)
-  (CSS --liq dynamically LINK)
-===============================*/
-
-
-/* =========================================
-   LIQUID METAL REACTIVE ENGINE (KNOB-AWARE)
-   ========================================= */
-
-/*const liquidSwitches =
-document.querySelectorAll(".switch-btn");*/
-
-function setLiquidState(btn, progress) {
-
-    // Clamp value between 0 and 1
-    progress = Math.max(0, Math.min(1, progress));
-
-    // Push to CSS custom property
-    btn.style.setProperty("--liq", progress);
-
-}
-
-
-/* =========================================
-   CALCULATE KNOB POSITION BASED ON ACTIVE
-   ========================================= */
-
-function updateLiquidFromState(btn) {
-
-    const isActive = btn.classList.contains("active");
-
-    // 0 = left, 1 = right
-    const progress = isActive ? 1 : 0;
-
-    setLiquidState(btn, progress);
-
-}
-
-
-/* =========================================
-   INIT ALL SWITCHES
-   ========================================= */
-
-liquidSwitches.forEach(btn => {
-
-    // initial state
-    updateLiquidFromState(btn);
-
-    // watch click interaction
-    btn.addEventListener("click", () => {
-
-        // delay sync to match your animation timing
-        setTimeout(() => {
-
-            updateLiquidFromState(btn);
-
-        }, 350);
-
-    });
-
-});
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*
-
-document
-.querySelectorAll(
-    ".switch-btn[data-target]"
-)
-.forEach(btn => {
-
-    btn.addEventListener(
-        "click",
-        () => {
-
-            btn.classList.add(
-                "active"
-            );
-
-            setTimeout(() => {
-
-                window.location.href =
-                btn.dataset.target;
-
-            }, 450);
-
-        }
+    state.healthTimer = setInterval(tick, AppConfig.healthIntervalMs);
+    addTeardown(() => clearInterval(state.healthTimer));
+    tick();
+  }
+
+  /* ============================================================
+  SECTION ADOPTION (HERO)
+  ============================================================ */
+
+  function adoptSection(runtime, key, instance) {
+    const adopt = runtime?.SectionController?.adopt;
+    if (typeof adopt !== "function") return false;
+
+    try {
+      return !!adopt.call(runtime.SectionController, key, instance);
+    } catch (err) {
+      log.error(`SectionController.adopt("${key}") threw:`, err);
+      return false;
+    }
+  }
+
+  async function attachHero(runtime) {
+    state.heroPresent = domHas("hero");
+    if (!state.heroPresent) return;
+
+    if (!window.Hero?.ready) {
+      log.warn("Hero is expected (#hero exists) but window.Hero.ready() is unavailable.");
+      return;
+    }
+
+    const heroAPI = await withTimeout(
+      window.Hero.ready(),
+      AppConfig.readyTimeoutMs,
+      "Hero.ready()"
     );
 
-});  */
+    const ok = adoptSection(runtime, AppConfig.sections.hero, heroAPI);
+    state.heroAdopted = ok;
 
-
-/* ========================
-   THE MENU LUANCH LOGIC OF
-   THE ACTIVE STATE OF BOTH 
-   THE DOT AND KNOB RESIDING 
-   WITHIN THE MAIN SWITCH 
-   ======================== */
-/*
-const menuSwitch =
-document.getElementById(
-    "menu-switch"
-);
-
-const dropdown =
-document.getElementById(
-    "dropdown-menu"
-);
-
-menuSwitch.addEventListener(
-    "click",
-    () => {
-
-        menuSwitch.classList.toggle(
-            "active"
-        );
-
-        dropdown.classList.toggle(
-            "active"
-        );
-
+    if (!ok) {
+      log.warn("Hero adoption failed (SectionController rejected or missing).");
+    } else {
+      log.info('Hero adopted as section key "hero".');
     }
-);  */
+  }
 
+  /* ============================================================
+  BOOT / READY / SHUTDOWN
+  ============================================================ */
 
+  async function boot() {
+    if (state.started || state.shutdown) return;
+    state.started = true;
+
+    // Version logging
+    log.info(`${AppConfig.name} boot`, {
+      version: AppConfig.version,
+      build: AppConfig.build,
+      env: AppConfig.env,
+      flags: FLAGS,
+    });
+
+    installGlobalHandlers();
+
+    // Runtime init
+    const runtime = initRuntime();
+
+    // Dev banner needs body
+    if (document.body) installDevBanner();
+    else {
+      const onLoad = () => installDevBanner();
+      window.addEventListener("load", onLoad, { once: true });
+      addTeardown(() => window.removeEventListener("load", onLoad));
+    }
+
+    startRuntimeHealthWatch();
+
+    // If Runtime exists, adopt Hero (if present)
+    if (runtime) {
+      try {
+        await attachHero(runtime);
+      } catch (err) {
+        // Not fatal by itself; it impacts readiness policy though.
+        log.error("attachHero failed:", err);
+      }
+    }
+
+    // Readiness policy:
+    // - Runtime must be present & init ok
+    // - If hero mount exists, hero must be adopted
+    const runtimeOk = !!runtime && state.runtimeInitOk;
+    const heroOk = !state.heroPresent || state.heroAdopted;
+
+    if (runtimeOk && heroOk) markReady();
+    else markReadyFailed(new Error("Readiness policy not satisfied."));
+  }
+
+  function shutdown(reason = "shutdown") {
+    if (state.shutdown) return;
+    state.shutdown = true;
+
+    dispatchAppEvent("app:shutdown", { reason, diagnostics: diagnostics() });
+
+    while (state.teardowns.length) {
+      const fn = state.teardowns.pop();
+      try {
+        fn();
+      } catch (err) {
+        log.error("Teardown failed:", err);
+      }
+    }
+
+    log.info("App shutdown complete.", { reason });
+  }
+
+  /* ============================================================
+  PUBLIC SURFACE (OPTIONAL)
+  ============================================================ */
+
+  // Expose minimal app API for debugging and future integrations.
+  // This is NOT a replacement for your contract doc; it's an app-level helper.
+  window.App = Object.freeze({
+    info: () => ({
+      name: AppConfig.name,
+      layer: AppConfig.layer,
+      version: AppConfig.version,
+      build: AppConfig.build,
+      env: AppConfig.env,
+    }),
+    flags: () => ({ ...FLAGS }),
+    ready: () => readyPromise,
+    diagnostics,
+    shutdown,
+  });
+
+  /* ============================================================
+  BOOTSTRAP TIMING
+  ============================================================ */
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", boot, { once: true });
+  } else {
+    boot();
+  }
+
+  // Optional: allow manual shutdown on page hide (disabled by default)
+  // const onPageHide = () => shutdown("pagehide");
+  // window.addEventListener("pagehide", onPageHide);
+  // addTeardown(() => window.removeEventListener("pagehide", onPageHide));
+})();
