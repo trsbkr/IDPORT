@@ -1143,34 +1143,64 @@ function receiveFromRuntime(type, payload = {}) {
     switch (type) {
 
         case "theme:change":
-            Hero.theme(payload.theme);                    // Use public API
+            // Prefer public API, fallback to internal engine during boot
+            if (window.Hero?.theme) {
+                window.Hero.theme(payload.theme);
+            } else {
+                engines.theme?.apply?.(payload.theme);
+            }
             break;
 
         case "hero:reset":
-            Hero.reset();
+            // Prevent double execution
+            if (window.Hero?.reset) {
+                window.Hero.reset();
+            } else {
+                engines.stateReset?.reset?.();
+            }
             break;
 
         case "hero:enter":
-            Hero.enter();
+            // No public Hero.enter() exists
+            engines.animation?.enter?.();
             break;
 
         case "hero:exit":
-            Hero.exit(payload.callback);
+            // No public Hero.exit() exists
+            engines.animation?.exit?.(payload.callback);
             break;
 
         case "quotes:load":
-            Hero.quotes.loadQuotes(payload.quotes);       // Standardized name
+            // Prevent duplicate execution
+            if (window.Hero?.quotes?.loadQuotes) {
+                window.Hero.quotes.loadQuotes(payload.quotes);
+            } else {
+                engines.quote?.loadQuotes?.(payload.quotes);
+            }
             break;
 
         case "portrait:set":
-            Hero.portrait.requestChange(payload.src, {
-                animate: payload.animate !== false
-            });
+            // Standardized public API contract
+            if (window.Hero?.portrait?.requestChange) {
+                window.Hero.portrait.requestChange(
+                    payload.src,
+                    {
+                        animate: payload.animate !== false
+                    }
+                );
+            } else {
+                engines.portrait?.requestChange?.(
+                    payload.src,
+                    {
+                        animate: payload.animate !== false
+                    }
+                );
+            }
             break;
 
         case "environment:update":
-            Hero.portrait.updateEnvironment(payload);
-            Hero.animation.updateEnvironment(payload);
+            // Portrait Engine owns updateLighting() through its
+            // internal event listener. Broadcast only.
             dispatchHeroEvent("hero:environment:update", payload);
             break;
 
