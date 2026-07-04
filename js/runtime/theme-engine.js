@@ -1,11 +1,11 @@
 // theme-engine.js - theme management
-/* export const ThemeEngine = {
+ export const ThemeEngine = {
   current: 'default',
 
   modeMap: Object.freeze({
     'charcoal-crimson': 'liquid-mode'
     /* future themes map here, e.g. 'emerald-aurora': 'neon-mode' */
-/*  }),
+  }),
 
   set(name) {
     if (this.current === name) return;
@@ -20,7 +20,7 @@
       detail: { theme: name, mode }
     }));
   }
-}; */
+}; 
 
 
 
