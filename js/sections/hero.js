@@ -1478,10 +1478,26 @@ const publicAPI = Object.freeze({
                 module: ModuleInfo,
                 status: currentStatus,
                 heroState: { ...state },
-                engines: Object.keys(engines),   // names only — no engine access, safe for debugging
+                engines: Object.keys(engines),
                 runtime: engines.runtimeBridge?.diagnostics?.() ?? null,
-                animation: engines.animation?.diagnostics?.() ?? null
+                animation: engines.animation?.diagnostics?.() ?? null,
+
+                // 10.G.4 — aggregate Charcoal Crimson's diagnostics as a peer
+                // rendering system, not as another Hero-owned diagnostics
+                // producer. Deliberately does NOT call window.Runtime
+                // .diagnostics() here — Runtime already pulls Hero's report
+                // into its own (see runtime.js diagnostics()); calling back
+                // in the other direction would recurse infinitely.
+
+                charcoalCrimson: (() => {
+                    const cc = window.CharcoalCrimson;
+                    if (!cc) return null;
+                    return cc.__diagnostics
+                        ? { ...cc.__diagnostics }
+                        : { environment: cc.getEnvironment?.() ?? null, version: cc.version ?? null };
+                })()
             })
+        });
         });
        
         window.Hero = publicAPI;
