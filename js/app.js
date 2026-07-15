@@ -354,12 +354,30 @@
   SECTION ADOPTION (HERO)
   ============================================================ */
 
-  function adoptSection(runtime, key, instance) {
-    const adopt = runtime?.SectionController?.adopt;
+function adoptSection(runtime, key, instance) {
+    const controller = runtime?.SectionController;
+    const adopt = controller?.adopt;
     if (typeof adopt !== "function") return false;
 
+    const existing = typeof controller.get === "function"
+        ? controller.get(key)
+        : null;
+
+    // 10.G.3 — Runtime may already have adopted this section via its own
+    // internal boot listener (e.g. runtime.js's hero:initialized handler),
+    // which always wins the race against this async path since it fires
+    // synchronously during event dispatch, before any awaited promise
+    // continuation runs. That's not a failure — it's the same outcome
+    // arriving via a different path. Treat "already adopted" as success
+    // instead of logging a spurious rejection warning.
+
+    if (existing) {
+        log.info(`Section "${key}" already adopted. Skipping duplicate adoption.`);
+        return true;
+    }
+
     try {
-      return !!adopt.call(runtime.SectionController, key, instance);
+      return !!adopt.call(controller, key, instance);
     } catch (err) {
       log.error(`SectionController.adopt("${key}") threw:`, err);
       return false;
