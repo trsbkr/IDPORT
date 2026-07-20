@@ -354,28 +354,72 @@
   SECTION ADOPTION (HERO)
   ============================================================ */
 
-function adoptSection(runtime, key, instance) {
+// ============================================================
+  // PHASE 10.G.3 — RUNTIME ADOPTION FIX
+  // ============================================================
+  // ORIGINAL BUG (deterministic, not a rare race):
+  //   Two independent things both try to adopt Hero into
+  //   SectionController:
+  //     1. runtime.js's own internal `hero:initialized` listener,
+  //        which calls SectionController.adopt("hero", window.Hero)
+  //        SYNCHRONOUSLY, inside the same call stack as the
+  //        `document.dispatchEvent("hero:initialized")` call.
+  //     2. app.js's attachHero(), which reaches adoptSection() only
+  //        AFTER `await window.Hero.ready()` resolves — and Promise
+  //        .then()/await continuations are always deferred to the
+  //        microtask queue, which only runs AFTER every synchronous
+  //        listener for that same event has already finished.
+  //   Because of this, path 1 ALWAYS wins and path 2 ALWAYS loses —
+  //   not a coin flip, a guaranteed ordering every single time. Before
+  //   this fix, SectionController.adopt() rejected the second
+  //   (guaranteed-losing) attempt and returned false, which meant:
+  //     - a spurious "Hero adoption failed" warning logged on every
+  //       single page load, even though Hero was actually adopted
+  //       and fully operational via the other path, and
+  //     - app.js's own `state.heroAdopted` incorrectly ended up
+  //       `false`, which could cascade into `app:ready` rejecting
+  //       even though the app was genuinely ready.
+  //
+  // FIX:
+  //   Before attempting adoption, check whether the section is
+  //   ALREADY adopted (via SectionController.get(key)). If it is,
+  //   that's not a failure — it's the same outcome having already
+  //   arrived through the other, faster bootstrap path. Treat it as
+  //   success and return true immediately, without ever calling
+  //   adopt() a second time.
+  //
+  // REVIEWER REFINEMENT (Main Dev):
+  //   Rather than silently returning true, log an informative message
+  //   distinguishing "already adopted via another bootstrap path" from
+  //   a genuine failure — improves future debugging without changing
+  //   behavior. This does not affect correctness; it only replaces a
+  //   misleading rejection warning with an accurate, low-noise info
+  //   log.
+  // ============================================================
+  function adoptSection(runtime, key, instance) {
     const controller = runtime?.SectionController;
     const adopt = controller?.adopt;
     if (typeof adopt !== "function") return false;
 
+    // Section may already be adopted via runtime.js's own internal
+    // hero:initialized listener, which — per the timing explanation
+    // above — will always have already run by the time this async
+    // path reaches this point. Checking first avoids calling adopt()
+    // a second time and getting a false rejection back.
     const existing = typeof controller.get === "function"
         ? controller.get(key)
         : null;
-
-    // 10.G.3 — Runtime may already have adopted this section via its own
-    // internal boot listener (e.g. runtime.js's hero:initialized handler),
-    // which always wins the race against this async path since it fires
-    // synchronously during event dispatch, before any awaited promise
-    // continuation runs. That's not a failure — it's the same outcome
-    // arriving via a different path. Treat "already adopted" as success
-    // instead of logging a spurious rejection warning.
 
     if (existing) {
         log.info(`Section "${key}" already adopted. Skipping duplicate adoption.`);
         return true;
     }
 
+    // Reaches here only if this path genuinely won the race (e.g. if
+    // runtime.js's internal listener were ever removed, or Hero
+    // becomes ready before Runtime finishes booting in some future
+    // load-order change) — in which case this IS the real, first
+    // adoption attempt, and should behave exactly as before.
     try {
       return !!adopt.call(controller, key, instance);
     } catch (err) {
