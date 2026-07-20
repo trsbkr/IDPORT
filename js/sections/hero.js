@@ -1498,7 +1498,7 @@ const publicAPI = Object.freeze({
                 })()
             })
         });
-        });
+        }
        
         window.Hero = publicAPI;
     }
