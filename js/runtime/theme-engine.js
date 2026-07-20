@@ -1,3 +1,226 @@
+// theme-engine.js — Website Runtime Theme Engine
+// ================================================================
+// PHASE 10.G.2 — FINAL REVISION
+// (Deterministic Runtime attachment, restore() strictly scoped to
+//  confirmed ownership, duplicate-attachment guard, guaranteed
+//  body-mode reapplication on restore, forward-compatible
+//  persistence shape.)
+// ================================================================
+// Owns:
+//   - Current application theme + mode (normal / liquid / neon)
+//   - body.<mode>-mode class ownership (the ONLY thing that
+//     drives Hero's liquid-metal/neon CSS effects)
+//   - Persistence of the user's theme choice (localStorage, inline)
+//   - Optional Theme Library override lookup (falls back cleanly
+//     if Theme Library is absent or still a stub)
+//   - Broadcasting `runtime:theme:changed` for any listener
+//
+// Does NOT own (belongs to Hero's own Engine 7 / hero.js):
+//   - Hero design tokens (--hero-bg, --hero-accent, etc.)
+//   - Hero token registry / validation
+//   - Portrait, Quote, Navigation, Animation logic
+//
+// Does NOT own (belongs to Charcoal Crimson):
+//   - Environment, Lighting, Materials, Atmosphere, Rendering
+// ================================================================
+
+(function(global) {
+    'use strict';
+
+    const STORAGE_KEY = 'idport:runtime:theme';
+
+    // Runtime's own local mode resolver is the primary source of
+    // truth. Theme Library (if/when populated) is an optional
+    // override layer, never a required dependency — Theme Library
+    // is still a stub as of Phase 10, so Runtime must be able to
+    // function correctly without it.
+    const LOCAL_MODE_MAP = {
+        'charcoal-crimson': 'liquid-mode',
+        // future themes map here, e.g. 'emerald-aurora': 'neon-mode'
+    };
+
+    function resolveMode(themeName) {
+        const library = global.ThemeLibrary || global.Runtime?.ThemeLibrary;
+        const fromLibrary = library?.list?.find?.(t => t.name === themeName);
+        if (fromLibrary?.mode) return fromLibrary.mode;
+        return LOCAL_MODE_MAP[themeName] || 'normal-mode';
+    }
+
+    // ── Persistence (forward-compatible shape) ──────────────────
+    // Stored as { theme: name } rather than a raw string, so future
+    // fields (mode, timestamp, version, migration info, etc.) can be
+    // added later without needing a storage-format migration.
+    function readStorage(key) {
+        try {
+            const raw = global.localStorage?.getItem(key);
+            if (!raw) return null;
+            const parsed = JSON.parse(raw);
+            return parsed && typeof parsed === 'object' ? parsed : null;
+        } catch (err) {
+            return null;
+        }
+    }
+
+    function writeStorage(key, value) {
+        try {
+            global.localStorage?.setItem(key, JSON.stringify(value));
+        } catch (err) {
+            console.warn('[ThemeEngine] Persistence failed:', err);
+        }
+    }
+
+    // ── Body mode ownership ──────────────────────────────────────
+    // This is the ONLY code in the whole codebase that should ever
+    // touch body.liquid-mode / neon-mode / normal-mode. Hero's own
+    // Theme Engine (Engine 7, inside hero.js) must never do this —
+    // that was the exact contamination this file's restoration
+    // exists to remove.
+    function applyBodyMode(mode) {
+        document.body.classList.remove('liquid-mode', 'neon-mode', 'normal-mode');
+        document.body.classList.add(mode);
+    }
+
+    const ThemeEngine = {
+        current: 'charcoal-crimson',
+
+        /**
+         * Set the active application theme/mode.
+         * Owns body class, persistence, and broadcast only.
+         *
+         * @param {string} name
+         * @param {{force?: boolean}} [opts] - force reapplies the body
+         *   mode class even if `name` matches the current theme.
+         *   Needed by restore() — see below.
+         */
+        set(name, { force = false } = {}) {
+            // Naming note: `sameTheme` means "the requested theme is
+            // already the current one" — not "only the mode changed".
+            // (Earlier draft used the more ambiguous name
+            // `modeChangedOnly`, corrected per review.)
+            const sameTheme = this.current === name;
+            if (sameTheme && !force) return;
+
+            this.current = name;
+            const mode = resolveMode(name);
+
+            applyBodyMode(mode);
+            writeStorage(STORAGE_KEY, { theme: name });
+
+            document.dispatchEvent(new CustomEvent('runtime:theme:changed', {
+                detail: { theme: name, mode }
+            }));
+        },
+
+        /**
+         * Restore a previously persisted theme choice, if any.
+         *
+         * IMPORTANT: always calls set() with { force: true } — even
+         * when the stored theme equals `this.current` — because a
+         * plain equality check would otherwise skip reapplying the
+         * body mode class entirely. Without `force`, this scenario
+         * would silently fail to restore the visual state:
+         *   1. Runtime believes the current theme is already
+         *      "charcoal-crimson" (this.current already matches).
+         *   2. The <body> class was removed/reset for any reason
+         *      (hot reload, partial refresh, external script).
+         *   3. restore() calls set("charcoal-crimson") with no force.
+         *   4. set() sees `sameTheme === true`, returns immediately.
+         *   5. body class is never reapplied — app "loses" its
+         *      visual state even though ThemeEngine's internal
+         *      record thinks everything is fine.
+         * `force: true` guarantees step 4 never short-circuits the
+         * DOM repair, regardless of what ThemeEngine already believes
+         * the current theme to be.
+         */
+        restore() {
+            const saved = readStorage(STORAGE_KEY);
+            const name = (saved && typeof saved.theme === 'string') ? saved.theme : this.current;
+            this.set(name, { force: true });
+        },
+
+        getCurrent() { return this.current; },
+        getMode() { return resolveMode(this.current); },
+    };
+
+    global.ThemeEngine = ThemeEngine;
+
+    // ── Runtime attachment (deterministic, not guessed) ──────────
+    // Do not assume `global.Runtime` already exists at the moment
+    // this file is evaluated — that depends entirely on script load
+    // order, which should never be something this file has to guess
+    // about. Instead:
+    //   - If `global.Runtime` already exists, Runtime has already
+    //     finished its own synchronous script execution (including
+    //     Runtime.init()) by the time this script runs — attach now.
+    //   - Otherwise, wait for the same `runtime:booted` event that
+    //     runtime.js already dispatches at the end of its own init().
+    // This exactly mirrors the dual-path pattern already used by
+    // section-controller.js, for consistency across Runtime files.
+    //
+    // Adjustment A (ownership strictness) — restore() must run ONLY
+    // inside the branch where Runtime is confirmed to exist AND has
+    // actually received ThemeEngine. An earlier draft called
+    // ThemeEngine.restore() unconditionally inside attachToRuntime(),
+    // meaning restoration (and body-class mutation) could happen even
+    // if Runtime was never actually attached — e.g. if something
+    // called attachToRuntime() manually before Runtime existed. That
+    // violates "Runtime is the authoritative owner of this state."
+    // Restoration is now strictly downstream of confirmed attachment.
+    //
+    // Adjustment B (duplicate-attachment guard) — the `attached` flag
+    // prevents attachToRuntime()'s effects (Runtime assignment +
+    // restore()) from running more than once, in case `runtime:booted`
+    // is ever dispatched more than once (accidentally or otherwise).
+    // Note the guard only latches to `true` AFTER both the "not
+    // already attached" and "Runtime actually exists" checks pass —
+    // so a call that arrives before Runtime exists safely no-ops
+    // without permanently blocking a later, legitimate attach attempt.
+    let attached = false;
+
+    function attachToRuntime() {
+        if (attached) return;
+        if (!global.Runtime) return;
+
+        attached = true;
+        global.Runtime.ThemeEngine = ThemeEngine;
+        ThemeEngine.restore();
+    }
+
+    if (global.Runtime) {
+        attachToRuntime();
+    } else {
+        document.addEventListener('runtime:booted', attachToRuntime, { once: true });
+    }
+
+})(typeof window !== 'undefined' ? window : this);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /* ============================================================
    ENGINE 7 — THEME (REVISED with all reviewer fixes)
    ============================================================
@@ -16,7 +239,7 @@
    15. ✅ Initialization guard
    ============================================================ */
 
-function initThemeEngine() {
+/* function initThemeEngine() {
     const REQUIRED_TOKENS = [
         "--hero-bg", "--hero-text", "--hero-quote-color", "--hero-accent",
         "--hero-accent-glow", "--hero-switch-base", "--hero-switch-knob",
@@ -420,4 +643,4 @@ function initThemeEngine() {
             return false;
         },
     };
-}
+} */
