@@ -1433,7 +1433,7 @@ function destroy() {
             });
         }
 
-const publicAPI = Object.freeze({
+        const publicAPI = Object.freeze({
             info: () => ({ ...ModuleInfo }),
             version: () => ModuleInfo.version,
             isInitialized: () => currentStatus === STATUS.ACTIVE,
@@ -1497,11 +1497,10 @@ const publicAPI = Object.freeze({
                         : { environment: cc.getEnvironment?.() ?? null, version: cc.version ?? null };
                 })()
             })
-        });
-        }
+        }); // <-- Correctly closes Object.freeze({ ... })
        
-        window.Hero = publicAPI;
-    }
+        window.Hero = publicAPI; // <-- Now safely inside exposeExports()
+    } // <-- Correctly closes function exposeExports()
 
     return {
         init, suspend, resume, destroy, refresh,
@@ -1513,7 +1512,7 @@ const publicAPI = Object.freeze({
         })
     };
 
-})();
+})(); // <-- Correctly closes the main IIFE
 
 /* ================================================================
    AUTO-INITIALISATION
